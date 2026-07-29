@@ -9,6 +9,8 @@ Description: Wrapper functions around 'clusterProfiler' for over-representation
     Cleveland dotplot visualization for enrichment results.
 License: MIT + file LICENSE
 Encoding: UTF-8
+Depends:
+    R (>= 4.1.0)
 Roxygen: list(markdown = TRUE)
 Imports:
     AnnotationDbi,
