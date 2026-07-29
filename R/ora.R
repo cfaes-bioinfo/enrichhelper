@@ -1,28 +1,54 @@
-# Compute a 'sig' flag from p.adjust/qvalue/Count, treating NA qvalue (e.g. a failed
-# qvalue::qvalue() call, common with few terms or a narrow p-value range) as 'not
-# significant' rather than letting it propagate to NA and silently emptying downstream
-# filter(sig == TRUE) calls in cdotplot().
-compute_sig <- function(
+# Fold significance and redundancy into a single 'redundant' column:
+#   NA    -- not significant (didn't pass p_enrich/q_enrich/min_DE_in_cat)
+#   FALSE -- significant, and kept by simplify() (or simplify_terms == FALSE)
+#   TRUE  -- significant, but removed by simplify() as too similar to another term
+# Treats NA qvalue (e.g. a failed qvalue::qvalue() call, common with few terms or a
+# narrow p-value range) as 'not significant' rather than letting it propagate to NA and
+# silently emptying downstream filter(redundant == FALSE) calls in cdotplot().
+# 'is_redundant' is the raw TRUE/FALSE flag set by flag_redundant_go()/flag_redundant_termmap()
+# (always FALSE when simplify_terms == FALSE), and only meaningful for significant terms.
+compute_redundant_col <- function(
   padj,
   qvalue,
   count,
   p_enrich,
   q_enrich,
   min_DE_in_cat,
-  redundant = FALSE
+  is_redundant = FALSE
 ) {
-  dplyr::coalesce(
-    padj < p_enrich & qvalue < q_enrich & count >= min_DE_in_cat & !redundant,
+  significant <- dplyr::coalesce(
+    padj < p_enrich & qvalue < q_enrich & count >= min_DE_in_cat,
     FALSE
   )
+  dplyr::if_else(significant, is_redundant, NA)
 }
 
-# Warn once if an entire qvalue column is NA (see compute_sig() note above).
+# Report the number of significant terms (run_ora() progress message). 'redundant_col' is
+# the final 'redundant' column (NA = not significant, FALSE/TRUE = significant, kept/removed
+# by simplify()). When simplify_terms == TRUE, also reports the count before redundancy
+# filtering (i.e. all significant terms, kept or removed) so the user can see both.
+report_sig_counts <- function(redundant_col, simplify_terms) {
+  n_sig_total <- sum(!is.na(redundant_col))
+  if (simplify_terms) {
+    n_sig_kept <- sum(!is.na(redundant_col) & !redundant_col)
+    cat(
+      " // significant terms:",
+      n_sig_kept,
+      "(",
+      n_sig_total,
+      "before redundancy filtering )\n"
+    )
+  } else {
+    cat(" // significant terms:", n_sig_total, "\n")
+  }
+}
+
+# Warn once if an entire qvalue column is NA (see compute_redundant_col() note above).
 warn_if_qvalue_all_na <- function(qvalue) {
   if (length(qvalue) > 0 && all(is.na(qvalue))) {
     message(
       "Note: q-values are all NA (qvalue::qvalue() likely failed) -- ",
-      "'sig' is computed from p.adjust only"
+      "significance is computed from p.adjust only"
     )
   }
 }
@@ -132,10 +158,11 @@ flag_redundant_termmap <- function(
 #'   column, adds an `ontology` column (term_map path).
 #' @param contrast Value written into the `contrast` column.
 #' @param DE_direction Value written into the `DE_direction` column.
-#' @param p_enrich Adjusted p-value threshold for the `sig` flag.
-#' @param q_enrich Q-value threshold for the `sig` flag.
-#' @param min_DE_in_cat Min. number of DE genes in a category for the `sig`
-#'   flag.
+#' @param p_enrich Adjusted p-value threshold for significance (`redundant`
+#'   column).
+#' @param q_enrich Q-value threshold for significance (`redundant` column).
+#' @param min_DE_in_cat Min. number of DE genes in a category for
+#'   significance (`redundant` column).
 #'
 #' @return A tibble with one row per tested term.
 #' @export
@@ -166,7 +193,7 @@ cp_to_df <- function(
   warn_if_qvalue_all_na(res$qvalue)
   res <- res |>
     dplyr::mutate(
-      sig = compute_sig(
+      redundant = compute_redundant_col(
         p.adjust,
         qvalue,
         Count,
@@ -186,7 +213,6 @@ cp_to_df <- function(
       GeneRatio,
       BgRatio,
       padj = p.adjust,
-      sig,
       redundant,
       description = Description,
       dplyr::any_of("ontology"),
@@ -638,12 +664,12 @@ prep_deseq_df <- function(df, contrast) {
 #'   analysis.
 #' @param simplify_terms Whether to use clusterProfiler's `simplify()`
 #'   function to flag redundant/similar GO terms among the significant ones.
-#'   All tested terms are always returned (regardless of `simplify_terms`);
-#'   when `simplify_terms = TRUE`, a `redundant` column flags terms that were
-#'   significant (p.adjust < p_enrich) but removed by `simplify()` as too
-#'   similar to another, more significant term. Terms that were never
-#'   significant have `redundant = FALSE` (`simplify()` never considered
-#'   them) -- use `sig`/`padj` to identify those.
+#'   All tested terms are always returned (regardless of `simplify_terms`)
+#'   in a single `redundant` column: `NA` for terms that weren't significant
+#'   (`padj < p_enrich`, `qvalue < q_enrich`, `Count >= min_DE_in_cat`),
+#'   `FALSE` for significant terms kept by `simplify()` (or when
+#'   `simplify_terms = FALSE`), and `TRUE` for significant terms removed by
+#'   `simplify()` as too similar to another, more significant term.
 #' @param simplify_cutoff Simplify similarity cutoff.
 #' @param return_df Convert the result object to a simple dataframe (tibble),
 #'   instead of keeping the clusterProfiler object. Should be `FALSE` if you
@@ -820,23 +846,26 @@ run_ora <- function(
   # Process the output
   if (return_df == FALSE) {
     # Every tested term is retained (pvalueCutoff/qvalueCutoff were set to 1 upstream) --
-    # add a 'sig' column so the caller can tell which terms actually pass the enrichment
-    # thresholds, using the same NA-safe rule cp_to_df() uses for the return_df = TRUE path.
-    if (!"redundant" %in% colnames(res@result)) {
-      res@result$redundant <- FALSE
+    # fold significance into 'redundant' (NA = not significant, FALSE = significant &
+    # kept, TRUE = significant but removed by simplify()), using the same NA-safe rule
+    # cp_to_df() uses for the return_df = TRUE path.
+    is_redundant <- if ("redundant" %in% colnames(res@result)) {
+      res@result$redundant
+    } else {
+      FALSE
     }
     warn_if_qvalue_all_na(res@result$qvalue)
-    res@result$sig <- compute_sig(
+    res@result$redundant <- compute_redundant_col(
       res@result$p.adjust,
       res@result$qvalue,
       res@result$Count,
       p_enrich,
       q_enrich,
       min_DE_in_cat,
-      res@result$redundant
+      is_redundant
     )
     if (verbose) {
-      cat(" // enriched terms:", sum(res@result$sig), "\n")
+      report_sig_counts(res@result$redundant, simplify_terms)
     }
   } else {
     # Create a regular df via the standalone conversion helper (see cp_to_df()).
@@ -853,7 +882,7 @@ run_ora <- function(
 
     # Report
     if (verbose) {
-      cat(" // enriched terms:", sum(res$sig), "\n")
+      report_sig_counts(res$redundant, simplify_terms)
     }
   }
 

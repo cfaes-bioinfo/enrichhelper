@@ -76,7 +76,7 @@ test_that("a 'log2FoldChange'-named LFC column works like an 'lfc'-named one", {
   )
 })
 
-test_that("'sig' is never NA, even if qvalue::qvalue() fails", {
+test_that("'redundant' is never NaN/error, even if qvalue::qvalue() fails", {
   # A term_map this small (2 terms tested) routinely makes qvalue::qvalue() fail --
   # that's exactly the scenario we want to exercise.
   term_map <- make_term_map()
@@ -97,7 +97,7 @@ test_that("'sig' is never NA, even if qvalue::qvalue() fails", {
     return_df = TRUE,
     verbose = FALSE
   )
-  expect_false(anyNA(res$sig))
+  expect_equal(is.na(res$redundant), res$padj >= 0.05)
 })
 
 test_that("filter_no_descrip drops the whole term, not just its description", {
@@ -127,7 +127,7 @@ test_that("filter_no_descrip drops the whole term, not just its description", {
   expect_false("TERM_B" %in% res$term)
 })
 
-test_that("return_df = FALSE still carries a 'sig' column on every tested term", {
+test_that("return_df = FALSE still carries a 'redundant' column on every tested term", {
   term_map <- make_term_map()
   all_genes <- unique(term_map$gene)
   term_a_genes <- term_map$gene[term_map$term == "TERM_A"]
@@ -146,7 +146,7 @@ test_that("return_df = FALSE still carries a 'sig' column on every tested term",
     return_df = FALSE,
     verbose = FALSE
   )
-  expect_true("sig" %in% colnames(res@result))
+  expect_true("redundant" %in% colnames(res@result))
   expect_equal(nrow(res@result), length(unique(term_map$term)))
 })
 

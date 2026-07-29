@@ -59,5 +59,5 @@ test_that("a DESeqResults-like object is accepted and tagged with 'contrast'", {
     )
   )
   expect_true(all(res$contrast == "trt_vs_ctrl"))
-  expect_true(res |> dplyr::filter(term == "TERM_A") |> dplyr::pull(sig))
+  expect_false(res |> dplyr::filter(term == "TERM_A") |> dplyr::pull(redundant))
 })
