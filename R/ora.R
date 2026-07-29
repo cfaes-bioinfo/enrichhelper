@@ -523,6 +523,12 @@ run_enrichgo <- function(
         paste(GO_ontologies, collapse = ", ")
       )
     }
+    warning(
+      "return_df = FALSE only runs GO enrichment for a single ontology ('",
+      GO_ontology,
+      "') -- set return_df = TRUE to run and combine all of: ",
+      paste(GO_ontologies, collapse = ", ")
+    )
     res <- enrichfun(GO_ontology = GO_ontology)
     # enrichGO() can return NULL (e.g. no term passes minGSSize/maxGSSize)
     if (simplify_terms == TRUE && !is.null(res)) {
