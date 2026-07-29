@@ -1,0 +1,35 @@
+Package: enrichhelper
+Title: Helper Functions for Gene Set Enrichment Analysis
+Version: 0.0.0.9000
+Authors@R:
+    person("Jelmer", "Poelstra", , "jelmerpoelstra@gmail.com", role = c("aut", "cre"))
+Description: Wrapper functions around 'clusterProfiler' for over-representation
+    analysis (ORA) and gene set enrichment analysis (GSEA), using either a
+    Bioconductor 'OrgDb' or a manually supplied term-to-gene map, plus a
+    Cleveland dotplot visualization for enrichment results.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Imports:
+    AnnotationDbi,
+    clusterProfiler,
+    colorspace,
+    dplyr,
+    GO.db,
+    ggforce,
+    ggplot2,
+    ggpubr,
+    GOSemSim,
+    methods,
+    purrr,
+    rlang,
+    scico,
+    stringr,
+    tibble,
+    tidyr
+Suggests:
+    DESeq2,
+    org.Hs.eg.db,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0
