@@ -44,8 +44,9 @@ GO_res <- run_ora(
   return_df = TRUE
 )
 
-# Plot
+# Plot (only significant, non-redundant terms; redundant: NA = not significant)
 GO_res |>
+  filter(!is.na(redundant), !redundant) |>
   cdotplot(
     x_var = "fold_enrich",
     fill_var = "padj_log",

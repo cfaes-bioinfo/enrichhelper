@@ -28,5 +28,5 @@
       cdotplot(df)
     Condition
       Error in `cdotplot()`:
-      ! No rows left to plot after filtering for sig == TRUE and the given contrasts/DE_dirs
+      ! No rows left to plot after filtering for the given contrasts/DE_dirs
 

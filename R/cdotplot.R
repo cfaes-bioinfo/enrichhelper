@@ -2,9 +2,13 @@
 #'
 #' Plots a tidy enrichment-results tibble (e.g. from [run_ora()] or
 #' [cp_to_df()] with `return_df = TRUE`) as a Cleveland dotplot, with one dot
-#' per significant term.
+#' per row of `df`. `cdotplot()` does not filter for significance or
+#' redundancy itself -- filter `df` (e.g. on a `redundant` column: `NA` =
+#' not significant, `FALSE` = significant & kept, `TRUE` = significant but
+#' removed by `simplify()`) before calling this function.
 #'
-#' @param df Dataframe with enrichment results from [run_ora()].
+#' @param df Dataframe with enrichment results from [run_ora()], already
+#'   filtered to the rows to plot (e.g. significant, non-redundant terms).
 #' @param contrasts One or more contrasts (default: all).
 #' @param DE_dirs One or more DE directions (default: all).
 #' @param x_var Column in `df` to plot along the x axis (`"padj_log"` will
@@ -47,10 +51,10 @@ cdotplot <- function(
   facet_scales = NULL,
   facet_label_fun = "label_value",
   x_title = NULL,
-  ylab_size = 11,
+  ylab_size = 10,
   add_term_id = FALSE,
   point_size = 6,
-  label_chars = 40,
+  label_chars = 60,
   scico_palette = NULL
 ) {
   # Constants
@@ -58,7 +62,7 @@ cdotplot <- function(
 
   # Check that columns needed unconditionally are present, with a clear message
   # naming what's missing, rather than an opaque error deep inside dplyr/ggplot
-  required_cols <- c("sig", "contrast", "padj", "term", "description")
+  required_cols <- c("contrast", "padj", "term", "description")
   missing_required <- setdiff(required_cols, colnames(df))
   if (length(missing_required) > 0) {
     stop(
@@ -88,16 +92,18 @@ cdotplot <- function(
   }
 
   # Prep the df
+  # NOTE: cdotplot() does not filter for significance/redundancy itself -- filter 'df'
+  # (e.g. on 'redundant': NA = not significant, FALSE = significant & kept, TRUE =
+  # significant but removed by simplify()) before calling this function.
   df <- df |>
-    dplyr::filter(sig == TRUE, contrast %in% contrasts) |>
+    dplyr::filter(contrast %in% contrasts) |>
     dplyr::mutate(padj_log = -log10(padj))
   if (!is.null(DE_dirs)) {
     df <- df |> dplyr::filter(DE_direction %in% DE_dirs)
   }
   if (nrow(df) == 0) {
     stop(
-      "No rows left to plot after filtering for sig == TRUE and the given ",
-      "contrasts/DE_dirs"
+      "No rows left to plot after filtering for the given contrasts/DE_dirs"
     )
   }
 

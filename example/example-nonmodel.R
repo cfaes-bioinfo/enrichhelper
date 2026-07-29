@@ -22,14 +22,17 @@ GO_res <- run_ora(
 )
 
 # Subset GO results since there are too many significant terms to plot all of them
-GO_sel <- GO_res |>
+GO_sig <- GO_res |>
+  # Keep only significant, non-redundant terms (redundant: NA = not significant)
+  filter(!is.na(redundant), !redundant)
+GO_sel <- GO_sig |>
   # Only take the 10 most significant terms per ontology
   slice_min(padj, n = 10, with_ties = FALSE, by = "ontology") |>
   # Sorting here will be respected in the plot - sort by fold enrichment, the axis variable:
   arrange(fold_enrich)
 
 # Cleveland dotplot
-GO_res |>
+GO_sig |>
   cdotplot(
     x_var = "fold_enrich",
     fill_var = "padj_log",

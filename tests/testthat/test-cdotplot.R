@@ -9,7 +9,6 @@ make_enrich_df <- function() {
       NA_character_
     ),
     padj = c(0.001, 0.01, 0.02),
-    sig = TRUE,
     n_focal_in_cat = c(5, 3, 2),
     median_lfc = c(1.5, -2, 0.5),
     mean_lfc = c(1.4, -1.9, 0.6),
@@ -40,6 +39,6 @@ test_that("cdotplot() errors when x_var/fill_var/facet_var names a missing colum
 })
 
 test_that("cdotplot() errors when nothing is left to plot after filtering", {
-  df <- make_enrich_df() |> dplyr::mutate(sig = FALSE)
+  df <- make_enrich_df() |> dplyr::filter(FALSE)
   expect_snapshot(error = TRUE, cdotplot(df))
 })
