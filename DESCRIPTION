@@ -31,5 +31,10 @@ Suggests:
     DESeq2,
     org.Hs.eg.db,
     testthat (>= 3.0.0)
+Remotes:
+    bioc::AnnotationDbi,
+    bioc::clusterProfiler,
+    bioc::GO.db,
+    bioc::GOSemSim
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.0.0
