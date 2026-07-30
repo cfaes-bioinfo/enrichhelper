@@ -505,6 +505,42 @@ run_enricher <- function(
   return(res)
 }
 
+# Run KEGG enrichment for a model organism via clusterProfiler::enrichKEGG() (run_ora()
+# engine), as an alternative to the term_map path. KEGG terms have no GO-like DAG structure,
+# so clusterProfiler::simplify() doesn't apply -- simplify_terms is only warned about here,
+# never honored; 'redundant' is left FALSE for every term. keyType follows enrichGO()'s
+# OrgDb-style default ('ENTREZID'), translated to enrichKEGG()'s own vocabulary
+# ('ncbi-geneid') since the two functions use different keyType names; any other keyType
+# (e.g. 'kegg', 'uniprot') is passed through as-is.
+run_enrichkegg <- function(
+  focal_genes,
+  organism,
+  keyType,
+  univ_vec,
+  min_cat_size,
+  max_cat_size,
+  simplify_terms
+) {
+  if (simplify_terms == TRUE) {
+    warning(
+      "simplify_terms = TRUE is not supported for KEGG (no GO-like term structure) -- ",
+      "ignoring simplify_terms"
+    )
+  }
+  kegg_keyType <- if (identical(keyType, "ENTREZID")) "ncbi-geneid" else keyType
+  clusterProfiler::enrichKEGG(
+    gene = focal_genes,
+    organism = organism,
+    keyType = kegg_keyType,
+    universe = univ_vec,
+    minGSSize = min_cat_size,
+    maxGSSize = max_cat_size,
+    pAdjustMethod = "BH",
+    pvalueCutoff = 1,
+    qvalueCutoff = 1
+  )
+}
+
 # Run GO enrichment with an OrgDb via clusterProfiler::enrichGO() (run_ora() engine).
 # When return_df == FALSE, runs a single ontology and returns the enrichResult (S4) object.
 # When return_df == TRUE, runs all three ontologies (BP, MF, CC) and returns a combined
@@ -629,13 +665,22 @@ prep_deseq_df <- function(df, contrast) {
 #' @param term_map Manually provide a functional category/term to gene
 #'   mapping with columns: 1: term, 2: gene, and optionally 3: description,
 #'   4: ontology.
-#' @param OrgDb Bioconductor `OrgDb` (alternative to `term_map` for available
-#'   organisms).
-#' @param ontology_type `"GO"` (`enrichGO()`) or `"KEGG"` (`enrichKEGG()`,
-#'   not yet implemented). Only applies when using an `OrgDb` instead of a
-#'   `term_map`.
-#' @param keyType OrgDb gene ID type. Only applies when using an `OrgDb`
-#'   instead of a `term_map`.
+#' @param OrgDb Bioconductor `OrgDb` (alternative to `term_map`, for GO
+#'   enrichment in available organisms). Required when `ontology_type =
+#'   "GO"`; not used for `ontology_type = "KEGG"` (see `organism`).
+#' @param ontology_type `"GO"` (`enrichGO()`, requires `OrgDb`) or `"KEGG"`
+#'   (`enrichKEGG()`, requires `organism`). Only applies when using an
+#'   `OrgDb`/`organism` instead of a `term_map`.
+#' @param organism KEGG species code (e.g. `"hsa"` for human, `"mmu"` for
+#'   mouse; see <https://rest.kegg.jp/list/organism> for the full list).
+#'   Alternative to `term_map`, used instead of `OrgDb` when `ontology_type =
+#'   "KEGG"`.
+#' @param keyType OrgDb gene ID type (`ontology_type = "GO"`) or
+#'   `enrichKEGG()` `keyType` (`ontology_type = "KEGG"`) -- only applies when
+#'   using an `OrgDb`/`organism` instead of a `term_map`. For KEGG, the
+#'   default `"ENTREZID"` is translated to `enrichKEGG()`'s own
+#'   `"ncbi-geneid"`; any other value (e.g. `"kegg"`, `"uniprot"`) is passed
+#'   through as-is.
 #' @param GO_ontology Only applies when `return_df == FALSE` (default `"BP"`
 #'   there, since clusterProfiler can't combine multiple ontologies into a
 #'   single `enrichResult`); ignored when `return_df == TRUE`, which always
@@ -691,6 +736,7 @@ run_ora <- function(
   term_map = NULL,
   OrgDb = NULL,
   ontology_type = NULL,
+  organism = NULL,
   keyType = "ENTREZID",
   GO_ontology = NULL,
   p_enrich = 0.05,
@@ -712,23 +758,28 @@ run_ora <- function(
   GO_ontologies <- c("BP", "MF", "CC")
 
   # Validate inputs and determine the analysis mode -----------------------------
-  # Exactly one of 'term_map' or 'OrgDb' must be supplied
-  if (is.null(term_map) && is.null(OrgDb)) {
-    stop("Supply either a 'term_map' or an 'OrgDb' (neither was given)")
+  # Exactly one of 'term_map', 'OrgDb', or 'organism' must be supplied
+  if (is.null(term_map) && is.null(OrgDb) && is.null(organism)) {
+    stop(
+      "Supply either a 'term_map', an 'OrgDb' (for GO), or an 'organism' (for KEGG) -- none was given"
+    )
   }
-  if (!is.null(term_map) && !is.null(OrgDb)) {
-    stop("Supply either a 'term_map' or an 'OrgDb', not both")
+  if (!is.null(term_map) && (!is.null(OrgDb) || !is.null(organism))) {
+    stop("Supply either a 'term_map' or an 'OrgDb'/'organism', not both")
   }
   mode <- if (!is.null(term_map)) "term_map" else "orgdb"
 
   # For the OrgDb mode, 'ontology_type' selects the enrichment function
   if (mode == "orgdb") {
     if (is.null(ontology_type) || !ontology_type %in% c("GO", "KEGG")) {
-      stop("With an 'OrgDb', set ontology_type to 'GO' or 'KEGG'")
+      stop("With an 'OrgDb'/'organism', set ontology_type to 'GO' or 'KEGG'")
     }
-    if (ontology_type == "KEGG") {
+    if (ontology_type == "GO" && is.null(OrgDb)) {
+      stop("ontology_type = 'GO' requires an 'OrgDb'")
+    }
+    if (ontology_type == "KEGG" && is.null(organism)) {
       stop(
-        "ontology_type = 'KEGG' is not yet implemented; use a 'term_map' for KEGG enrichment"
+        "ontology_type = 'KEGG' requires an 'organism' (KEGG species code, e.g. 'hsa')"
       )
     }
   }
@@ -821,20 +872,32 @@ run_ora <- function(
       simplify_cutoff = simplify_cutoff,
       verbose = verbose
     ),
-    orgdb = run_enrichgo(
-      focal_genes = focal_genes,
-      OrgDb = OrgDb,
-      keyType = keyType,
-      univ_vec = univ_vec,
-      GO_ontology = GO_ontology,
-      GO_ontologies = GO_ontologies,
-      min_cat_size = min_cat_size,
-      max_cat_size = max_cat_size,
-      simplify_terms = simplify_terms,
-      p_enrich = p_enrich,
-      simplify_cutoff = simplify_cutoff,
-      return_df = return_df
-    )
+    orgdb = if (ontology_type == "GO") {
+      run_enrichgo(
+        focal_genes = focal_genes,
+        OrgDb = OrgDb,
+        keyType = keyType,
+        univ_vec = univ_vec,
+        GO_ontology = GO_ontology,
+        GO_ontologies = GO_ontologies,
+        min_cat_size = min_cat_size,
+        max_cat_size = max_cat_size,
+        simplify_terms = simplify_terms,
+        p_enrich = p_enrich,
+        simplify_cutoff = simplify_cutoff,
+        return_df = return_df
+      )
+    } else {
+      run_enrichkegg(
+        focal_genes = focal_genes,
+        organism = organism,
+        keyType = keyType,
+        univ_vec = univ_vec,
+        min_cat_size = min_cat_size,
+        max_cat_size = max_cat_size,
+        simplify_terms = simplify_terms
+      )
+    }
   )
 
   # ClusterProfiler may return NULL result for small sets

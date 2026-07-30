@@ -203,3 +203,22 @@ test_that("run_ora() requires exactly one of 'term_map'/'OrgDb'", {
     )
   )
 })
+
+test_that("run_ora() requires 'organism' for KEGG and 'OrgDb' for GO", {
+  expect_snapshot(
+    error = TRUE,
+    run_ora(
+      focal_genes = c("g1", "g2"),
+      ontology_type = "KEGG",
+      OrgDb = "org.Hs.eg.db"
+    )
+  )
+  expect_snapshot(
+    error = TRUE,
+    run_ora(
+      focal_genes = c("g1", "g2"),
+      ontology_type = "GO",
+      organism = "hsa"
+    )
+  )
+})

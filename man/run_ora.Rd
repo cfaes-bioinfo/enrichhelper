@@ -12,6 +12,7 @@ run_ora(
   term_map = NULL,
   OrgDb = NULL,
   ontology_type = NULL,
+  organism = NULL,
   keyType = "ENTREZID",
   GO_ontology = NULL,
   p_enrich = 0.05,
@@ -50,15 +51,23 @@ IDs.}
 mapping with columns: 1: term, 2: gene, and optionally 3: description,
 4: ontology.}
 
-\item{OrgDb}{Bioconductor \code{OrgDb} (alternative to \code{term_map} for available
-organisms).}
+\item{OrgDb}{Bioconductor \code{OrgDb} (alternative to \code{term_map}, for GO
+enrichment in available organisms). Required when \code{ontology_type = "GO"}; not used for \code{ontology_type = "KEGG"} (see \code{organism}).}
 
-\item{ontology_type}{\code{"GO"} (\code{enrichGO()}) or \code{"KEGG"} (\code{enrichKEGG()},
-not yet implemented). Only applies when using an \code{OrgDb} instead of a
-\code{term_map}.}
+\item{ontology_type}{\code{"GO"} (\code{enrichGO()}, requires \code{OrgDb}) or \code{"KEGG"}
+(\code{enrichKEGG()}, requires \code{organism}). Only applies when using an
+\code{OrgDb}/\code{organism} instead of a \code{term_map}.}
 
-\item{keyType}{OrgDb gene ID type. Only applies when using an \code{OrgDb}
-instead of a \code{term_map}.}
+\item{organism}{KEGG species code (e.g. \code{"hsa"} for human, \code{"mmu"} for
+mouse; see \url{https://rest.kegg.jp/list/organism} for the full list).
+Alternative to \code{term_map}, used instead of \code{OrgDb} when \code{ontology_type = "KEGG"}.}
+
+\item{keyType}{OrgDb gene ID type (\code{ontology_type = "GO"}) or
+\code{enrichKEGG()} \code{keyType} (\code{ontology_type = "KEGG"}) -- only applies when
+using an \code{OrgDb}/\code{organism} instead of a \code{term_map}. For KEGG, the
+default \code{"ENTREZID"} is translated to \code{enrichKEGG()}'s own
+\code{"ncbi-geneid"}; any other value (e.g. \code{"kegg"}, \code{"uniprot"}) is passed
+through as-is.}
 
 \item{GO_ontology}{Only applies when \code{return_df == FALSE} (default \code{"BP"}
 there, since clusterProfiler can't combine multiple ontologies into a

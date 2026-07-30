@@ -1,3 +1,11 @@
+# enrichhelper 0.0.0.9003
+
+* `run_ora()` gained support for KEGG enrichment of model organisms
+  (`ontology_type = "KEGG"`) via `clusterProfiler::enrichKEGG()`, using a new
+  `organism` argument (KEGG species code, e.g. `"hsa"`) instead of a
+  `term_map`. `simplify_terms` is not supported for KEGG (no GO-like term
+  structure).
+
 # enrichhelper 0.0.0.9002
 
 * `run_gsea()` gained a `simplify_terms` (+ `simplify_cutoff`) argument, mirroring
