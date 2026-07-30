@@ -217,9 +217,9 @@ cdotplot <- function(
 
   # X-axis left-hand expansion
   if (x_var %in% c("padj_log", "fold_enrich")) {
-    expand_min <- 0
+    expand_min <- 0.02
   } else {
-    expand_min <- 0.09
+    expand_min <- 0.12
   }
 
   # Create the base plot
@@ -241,7 +241,7 @@ cdotplot <- function(
   p <- p +
     ggplot2::scale_x_discrete(labels = label_lookup_vec) +
     ggplot2::scale_y_continuous(
-      expand = ggplot2::expansion(mult = c(expand_min, 0.09))
+      expand = ggplot2::expansion(mult = c(expand_min, 0.12))
     ) +
     col_scale +
     ggplot2::labs(x = NULL) +
