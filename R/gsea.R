@@ -214,7 +214,11 @@ run_gsea <- function(
     gsea_res <- gsea_res |>
       dplyr::mutate(
         sig = ifelse(p.adjust < p_enrich, TRUE, FALSE),
-        contrast = fcontrast
+        contrast = fcontrast,
+        # Total nr of genes in the functional term (that were also part of the
+        # ranked gene list); total nr of genes tested (i.e. ranked/used for GSEA)
+        n_cat = setSize,
+        n_total = length(lfc_vec)
       ) |>
       dplyr::select(
         contrast,
@@ -224,6 +228,8 @@ run_gsea <- function(
         redundant,
         description = Description,
         dplyr::any_of("ontology"),
+        n_cat,
+        n_total,
         gene_ids = core_enrichment
       )
 
