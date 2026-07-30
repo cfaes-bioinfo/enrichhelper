@@ -3,8 +3,10 @@
 #   FALSE -- significant, and kept by simplify() (or simplify_terms == FALSE)
 #   TRUE  -- significant, but removed by simplify() as too similar to another term
 # Treats NA qvalue (e.g. a failed qvalue::qvalue() call, common with few terms or a
-# narrow p-value range) as 'not significant' rather than letting it propagate to NA and
-# silently emptying downstream filter(redundant == FALSE) calls in cdotplot().
+# narrow p-value range) as 'not significant'. Callers null out padj alongside qvalue first
+# (see na_padj_where_qvalue_na() below), so this naturally lands on NA rather than letting a
+# still-populated padj silently drive 'significant' and empty downstream
+# filter(redundant == FALSE) calls in cdotplot().
 # 'is_redundant' is the raw TRUE/FALSE flag set by flag_redundant_go()/flag_redundant_termmap()
 # (always FALSE when simplify_terms == FALSE), and only meaningful for significant terms.
 compute_redundant_col <- function(
@@ -43,14 +45,16 @@ report_sig_counts <- function(redundant_col, simplify_terms) {
   }
 }
 
-# Warn once if an entire qvalue column is NA (see compute_redundant_col() note above).
-warn_if_qvalue_all_na <- function(qvalue) {
+# Null out padj wherever qvalue is NA (see compute_redundant_col() note above), and warn
+# once if the whole qvalue column is NA.
+na_padj_where_qvalue_na <- function(padj, qvalue) {
   if (length(qvalue) > 0 && all(is.na(qvalue))) {
     message(
       "Note: q-values are all NA (qvalue::qvalue() likely failed) -- ",
-      "significance is computed from p.adjust only"
+      "setting p-values to NA as well"
     )
   }
+  dplyr::if_else(is.na(qvalue), NA_real_, padj)
 }
 
 # Flag redundant GO terms in an enrichGO() result using clusterProfiler::simplify().
@@ -190,9 +194,9 @@ cp_to_df <- function(
     res$redundant <- FALSE
   }
   res <- tibble::as_tibble(res)
-  warn_if_qvalue_all_na(res$qvalue)
   res <- res |>
     dplyr::mutate(
+      p.adjust = na_padj_where_qvalue_na(p.adjust, qvalue),
       redundant = compute_redundant_col(
         p.adjust,
         qvalue,
@@ -939,7 +943,10 @@ run_ora <- function(
     } else {
       FALSE
     }
-    warn_if_qvalue_all_na(res@result$qvalue)
+    res@result$p.adjust <- na_padj_where_qvalue_na(
+      res@result$p.adjust,
+      res@result$qvalue
+    )
     res@result$redundant <- compute_redundant_col(
       res@result$p.adjust,
       res@result$qvalue,
