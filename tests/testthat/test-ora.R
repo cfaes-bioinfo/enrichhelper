@@ -222,3 +222,16 @@ test_that("run_ora() requires 'organism' for KEGG and 'OrgDb' for GO", {
     )
   )
 })
+
+test_that("run_ora() rejects a KEGG keyType unsupported by KEGG's own API", {
+  expect_snapshot(
+    error = TRUE,
+    run_ora(
+      focal_genes = c("g1", "g2"),
+      ontology_type = "KEGG",
+      organism = "hsa",
+      keyType = "ENSEMBL",
+      verbose = FALSE
+    )
+  )
+})

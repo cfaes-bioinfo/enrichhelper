@@ -511,7 +511,11 @@ run_enricher <- function(
 # never honored; 'redundant' is left FALSE for every term. keyType follows enrichGO()'s
 # OrgDb-style default ('ENTREZID'), translated to enrichKEGG()'s own vocabulary
 # ('ncbi-geneid') since the two functions use different keyType names; any other keyType
-# (e.g. 'kegg', 'uniprot') is passed through as-is.
+# (e.g. 'kegg', 'uniprot') is passed through as-is. KEGG's own REST API (which
+# enrichKEGG()/KEGG_convert() query for the ID conversion) only recognizes a small, fixed
+# set of gene ID types -- notably NOT 'ENSEMBL' -- so an unsupported keyType is caught here
+# with a clear message rather than surfacing as a cryptic KEGG HTTP-400/"not supported" error
+# from deep inside enrichKEGG().
 run_enrichkegg <- function(
   focal_genes,
   organism,
@@ -527,7 +531,19 @@ run_enrichkegg <- function(
       "ignoring simplify_terms"
     )
   }
+  kegg_keyTypes <- c("kegg", "ncbi-geneid", "ncbi-proteinid", "uniprot")
   kegg_keyType <- if (identical(keyType, "ENTREZID")) "ncbi-geneid" else keyType
+  if (!kegg_keyType %in% kegg_keyTypes) {
+    stop(
+      "keyType = '",
+      keyType,
+      "' is not supported by enrichKEGG() -- KEGG's API only recognizes: ",
+      paste(kegg_keyTypes, collapse = ", "),
+      " (or 'ENTREZID', auto-translated to 'ncbi-geneid'). Convert your gene IDs to one ",
+      "of these first, e.g. via AnnotationDbi::mapIds(OrgDb, keys, keytype = 'ENSEMBL', ",
+      "column = 'ENTREZID')."
+    )
+  }
   clusterProfiler::enrichKEGG(
     gene = focal_genes,
     organism = organism,
@@ -679,8 +695,10 @@ prep_deseq_df <- function(df, contrast) {
 #'   `enrichKEGG()` `keyType` (`ontology_type = "KEGG"`) -- only applies when
 #'   using an `OrgDb`/`organism` instead of a `term_map`. For KEGG, the
 #'   default `"ENTREZID"` is translated to `enrichKEGG()`'s own
-#'   `"ncbi-geneid"`; any other value (e.g. `"kegg"`, `"uniprot"`) is passed
-#'   through as-is.
+#'   `"ncbi-geneid"`; any other value is passed through as-is, but must be
+#'   one KEGG's own API supports: `"kegg"`, `"ncbi-geneid"`,
+#'   `"ncbi-proteinid"`, or `"uniprot"` (notably *not* `"ENSEMBL"` -- convert
+#'   Ensembl IDs to one of these first, e.g. via `AnnotationDbi::mapIds()`).
 #' @param GO_ontology Only applies when `return_df == FALSE` (default `"BP"`
 #'   there, since clusterProfiler can't combine multiple ontologies into a
 #'   single `enrichResult`); ignored when `return_df == TRUE`, which always

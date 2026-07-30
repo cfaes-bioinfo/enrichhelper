@@ -66,8 +66,10 @@ Alternative to \code{term_map}, used instead of \code{OrgDb} when \code{ontology
 \code{enrichKEGG()} \code{keyType} (\code{ontology_type = "KEGG"}) -- only applies when
 using an \code{OrgDb}/\code{organism} instead of a \code{term_map}. For KEGG, the
 default \code{"ENTREZID"} is translated to \code{enrichKEGG()}'s own
-\code{"ncbi-geneid"}; any other value (e.g. \code{"kegg"}, \code{"uniprot"}) is passed
-through as-is.}
+\code{"ncbi-geneid"}; any other value is passed through as-is, but must be
+one KEGG's own API supports: \code{"kegg"}, \code{"ncbi-geneid"},
+\code{"ncbi-proteinid"}, or \code{"uniprot"} (notably \emph{not} \code{"ENSEMBL"} -- convert
+Ensembl IDs to one of these first, e.g. via \code{AnnotationDbi::mapIds()}).}
 
 \item{GO_ontology}{Only applies when \code{return_df == FALSE} (default \code{"BP"}
 there, since clusterProfiler can't combine multiple ontologies into a

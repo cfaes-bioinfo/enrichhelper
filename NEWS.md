@@ -4,7 +4,9 @@
   (`ontology_type = "KEGG"`) via `clusterProfiler::enrichKEGG()`, using a new
   `organism` argument (KEGG species code, e.g. `"hsa"`) instead of a
   `term_map`. `simplify_terms` is not supported for KEGG (no GO-like term
-  structure).
+  structure). A `keyType` unsupported by KEGG's own API (e.g. `"ENSEMBL"`)
+  now errors immediately with a clear message, rather than surfacing a
+  cryptic error from deep inside `enrichKEGG()`.
 
 # enrichhelper 0.0.0.9002
 
