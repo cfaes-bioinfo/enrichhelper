@@ -216,10 +216,10 @@ cdotplot <- function(
   }
 
   # X-axis left-hand expansion
-  if (x_var %in% c("padj_log", "fold_enrich")) {
-    expand_min <- 0.02
-  } else {
+  if (any(df[[x_var]] < 0, na.rm = TRUE)) {
     expand_min <- 0.12
+  } else {
+    expand_min <- 0.02
   }
 
   # Create the base plot
