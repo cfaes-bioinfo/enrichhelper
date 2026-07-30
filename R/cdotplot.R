@@ -245,6 +245,8 @@ cdotplot <- function(
     ggplot2::theme(
       legend.position = legend_pos,
       plot.margin = ggplot2::margin(0.5, 0.5, 0.5, 0.5, unit = "cm"),
+      plot.title = ggplot2::element_text(hjust = 0.5),
+      plot.subtitle = ggplot2::element_text(hjust = 0.5),
       strip.text.y = ggplot2::element_text(angle = 270, face = "bold"),
       strip.placement = "outside",
       axis.title.x = ggplot2::element_text(
