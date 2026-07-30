@@ -35,6 +35,12 @@
 #'   (e.g. `"batlow"`) to use for a numeric `fill_var` instead of the
 #'   default viridis scale (ignored for `fill_var %in% c("mean_lfc",
 #'   "median_lfc")`, which always use the diverging scale).
+#' @param sort_fun Function used to aggregate `abs(x_var)` across a term's
+#'   row(s) (a term can have more than one row when faceting) into a single
+#'   value that determines its position, with the most extreme term at the
+#'   top. Default `max`; use `mean` for an ordering that is less sensitive
+#'   to a single extreme facet value. Must accept an `na.rm` argument (as
+#'   `max()` and `mean()` do).
 #'
 #' @return A `ggplot` object.
 #' @export
@@ -55,7 +61,8 @@ cdotplot <- function(
   add_term_id = FALSE,
   point_size = 6,
   label_chars = 60,
-  scico_palette = NULL
+  scico_palette = NULL,
+  sort_fun = max
 ) {
   # Constants
   y_var <- "term"
@@ -106,6 +113,16 @@ cdotplot <- function(
       "No rows left to plot after filtering for the given contrasts/DE_dirs"
     )
   }
+
+  # Order terms by sort_fun(abs(x_var)), most extreme at the top
+  # A term can appear in multiple rows (e.g. once per facet), but the term
+  # axis is shared across facets, so we need a single, term-level order
+  term_order <- df |>
+    dplyr::group_by(term) |>
+    dplyr::summarise(.sort_key = sort_fun(abs(.data[[x_var]]), na.rm = TRUE)) |>
+    dplyr::arrange(.sort_key) |>
+    dplyr::pull(term)
+  df <- df |> dplyr::mutate(term = factor(term, levels = term_order))
 
   # Modify the term description
   df <- df |>
@@ -238,7 +255,8 @@ cdotplot <- function(
       axis.text.x = ggplot2::element_text(size = 10),
       axis.text.y = ggplot2::element_text(size = ylab_size),
       panel.grid.major = ggplot2::element_blank(),
-      panel.grid.minor.x = ggplot2::element_blank()
+      panel.grid.minor.x = ggplot2::element_blank(),
+      panel.spacing = grid::unit(11, "pt") # 2x the theme_bw() default
     )
 
   # Other formatting

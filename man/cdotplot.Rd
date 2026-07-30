@@ -21,7 +21,8 @@ cdotplot(
   add_term_id = FALSE,
   point_size = 6,
   label_chars = 60,
-  scico_palette = NULL
+  scico_palette = NULL,
+  sort_fun = max
 )
 }
 \arguments{
@@ -68,6 +69,13 @@ when including the term ID).}
 \item{scico_palette}{Name of a \code{scico::scale_color_scico()} palette
 (e.g. \code{"batlow"}) to use for a numeric \code{fill_var} instead of the
 default viridis scale (ignored for \code{fill_var \%in\% c("mean_lfc", "median_lfc")}, which always use the diverging scale).}
+
+\item{sort_fun}{Function used to aggregate \code{abs(x_var)} across a term's
+row(s) (a term can have more than one row when faceting) into a single
+value that determines its position, with the most extreme term at the
+top. Default \code{max}; use \code{mean} for an ordering that is less sensitive
+to a single extreme facet value. Must accept an \code{na.rm} argument (as
+\code{max()} and \code{mean()} do).}
 }
 \value{
 A \code{ggplot} object.
