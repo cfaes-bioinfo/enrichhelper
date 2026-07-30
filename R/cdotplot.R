@@ -246,8 +246,8 @@ cdotplot <- function(
     p <- p + ggplot2::labs(y = x_title)
   }
 
-  # Vertical lines at 0
-  if (x_var %in% c("mean_lfc", "median_lfc", "fold_enrich")) {
+  # Vertical lines at 0 (only if x_var actually has values below 0)
+  if (any(df[[x_var]] < 0, na.rm = TRUE)) {
     p <- p +
       ggplot2::geom_hline(yintercept = 0, color = "grey70", linewidth = 1)
 
