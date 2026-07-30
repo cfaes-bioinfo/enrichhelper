@@ -37,6 +37,7 @@
 #'   redundant are dropped from the returned object (in addition to
 #'   non-significant terms).
 #' @param simplify_cutoff Simplify similarity cutoff.
+#' @param n_perm Number of permutations for GSEA (ClusterProfiler's nPermSimple). Default is 10,000.
 #' @param allow_dups Allow a gene ID to be present multiple times in a
 #'   (single-contrast) list of DEGs. This should typically *not* be the
 #'   case, but could be so when working with gene IDs (orthologs) from
@@ -59,6 +60,7 @@ run_gsea <- function(
   p_enrich = 0.05,
   simplify_terms = FALSE,
   simplify_cutoff = 0.7,
+  n_perm = 10000,
   allow_dups = FALSE,
   return_df = FALSE
 ) {
@@ -150,6 +152,7 @@ run_gsea <- function(
       TERM2NAME = term2name,
       pvalueCutoff = 1,
       pAdjustMethod = "BH",
+      nPermSimple = n_perm,
       verbose = FALSE,
       eps = 0,
       seed = TRUE
@@ -162,6 +165,7 @@ run_gsea <- function(
       keyType = keyType,
       pvalueCutoff = 1,
       pAdjustMethod = "BH",
+      nPermSimple = n_perm,
       verbose = FALSE,
       eps = 0,
       seed = TRUE
