@@ -427,8 +427,8 @@ prep_ora_genes <- function(
         sep = ""
       )
     }
-    if (length(focal_genes) <= 1) {
-      message("// Skipping enrichment analysis: 1 or 0 DEGs\n")
+    if (length(focal_genes) <= 2) {
+      message(" // Skipping enrichment analysis: fewer than 3 DEGs\n")
       skip <- TRUE
     }
   }
