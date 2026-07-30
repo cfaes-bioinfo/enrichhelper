@@ -399,8 +399,8 @@ prep_ora_genes <- function(
         sep = ""
       )
     }
-    if (length(focal_genes) <= 1) {
-      message(" // Skipping enrichment analysis: only 1 or 0 DEGs\n")
+    if (length(focal_genes) <= 2) {
+      message(" // Skipping enrichment analysis: fewer than 3 DEGs\n")
       skip <- TRUE
     } else if (length(genes_in_map) == 0) {
       message(
@@ -865,13 +865,6 @@ run_ora <- function(
 
   # Skip the enrichment analysis if there are too few (or no mapped) genes
   if (genes$skip) {
-    message(
-      "Too few genes with terms available. Skipping enrichment analysis for contrast '",
-      fcontrast,
-      "' (DE direction: '",
-      DE_direction,
-      "')"
-    )
     return(NULL)
   }
 
