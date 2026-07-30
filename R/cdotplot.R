@@ -161,9 +161,9 @@ cdotplot <- function(
     legend_pos <- "top"
   }
   if (fill_var == "median_lfc") {
-    color_name <- expression(paste("Median log"[2] * "-fold change"))
+    color_name <- expression(paste("Median log"[2] * "-fold change of genes"))
   } else if (fill_var == "mean_lfc") {
-    color_name <- expression(paste("Mean log"[2] * "-fold change"))
+    color_name <- expression(paste("Mean log"[2] * "-fold change of genes"))
   } else if (fill_var == "padj_log") {
     color_name <- expression("-Log"[10] * " P")
   } else {
@@ -175,13 +175,13 @@ cdotplot <- function(
     if (x_var == "padj_log") {
       x_title <- expression("-Log"[10] * " P")
     } else if (x_var == "padj") {
-      x_title <- "Adjusted p-value"
+      x_title <- "Adjusted p-value of term"
     } else if (x_var == "fold_enrich") {
-      x_title <- "Fold enrichment"
+      x_title <- "Fold enrichment of term"
     } else if (x_var == "median_lfc") {
-      x_title <- expression(paste("Median log"[2] * "-fold change"))
+      x_title <- expression(paste("Median log"[2] * "-fold change of genes"))
     } else if (x_var == "mean_lfc") {
-      x_title <- expression(paste("Mean log"[2] * "-fold change"))
+      x_title <- expression(paste("Mean log"[2] * "-fold change of genes"))
     }
   }
 
