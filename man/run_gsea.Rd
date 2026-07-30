@@ -15,6 +15,7 @@ run_gsea(
   p_enrich = 0.05,
   simplify_terms = FALSE,
   simplify_cutoff = 0.7,
+  n_perm = 10000,
   allow_dups = FALSE,
   return_df = FALSE
 )
@@ -61,6 +62,8 @@ redundant are dropped from the returned object (in addition to
 non-significant terms).}
 
 \item{simplify_cutoff}{Simplify similarity cutoff.}
+
+\item{n_perm}{Number of permutations for GSEA (ClusterProfiler's nPermSimple). Default is 10,000.}
 
 \item{allow_dups}{Allow a gene ID to be present multiple times in a
 (single-contrast) list of DEGs. This should typically \emph{not} be the

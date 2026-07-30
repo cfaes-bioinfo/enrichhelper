@@ -1,3 +1,12 @@
+# enrichhelper 0.0.0.9002
+
+* `run_gsea()` gained a `simplify_terms` (+ `simplify_cutoff`) argument, mirroring
+  `run_ora()`: uses `clusterProfiler::simplify()` to flag redundant/similar GO terms
+  among the significant ones via a `redundant` column.
+* `run_gsea()` gained an `n_perm` argument (`clusterProfiler`'s `nPermSimple`) to
+  control the number of GSEA permutations, with a higher default (10,000) than
+  `clusterProfiler`'s own default.
+
 # enrichhelper 0.0.0.9001
 
 * Fixed `remotes::install_github()` failing with a git error for `GO.db`
