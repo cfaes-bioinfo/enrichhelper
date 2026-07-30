@@ -17,15 +17,16 @@ cdotplot(
   facet_scales = NULL,
   facet_label_fun = "label_value",
   x_title = NULL,
-  ylab_size = 11,
+  ylab_size = 10,
   add_term_id = FALSE,
   point_size = 6,
-  label_chars = 40,
+  label_chars = 60,
   scico_palette = NULL
 )
 }
 \arguments{
-\item{df}{Dataframe with enrichment results from \code{\link[=run_ora]{run_ora()}}.}
+\item{df}{Dataframe with enrichment results from \code{\link[=run_ora]{run_ora()}}, already
+filtered to the rows to plot (e.g. significant, non-redundant terms).}
 
 \item{contrasts}{One or more contrasts (default: all).}
 
@@ -74,5 +75,8 @@ A \code{ggplot} object.
 \description{
 Plots a tidy enrichment-results tibble (e.g. from \code{\link[=run_ora]{run_ora()}} or
 \code{\link[=cp_to_df]{cp_to_df()}} with \code{return_df = TRUE}) as a Cleveland dotplot, with one dot
-per significant term.
+per row of \code{df}. \code{cdotplot()} does not filter for significance or
+redundancy itself -- filter \code{df} (e.g. on a \code{redundant} column: \code{NA} =
+not significant, \code{FALSE} = significant & kept, \code{TRUE} = significant but
+removed by \code{simplify()}) before calling this function.
 }

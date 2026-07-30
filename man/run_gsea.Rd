@@ -13,6 +13,8 @@ run_gsea(
   ontology_type = NULL,
   GO_ontology = NULL,
   p_enrich = 0.05,
+  simplify_terms = FALSE,
+  simplify_cutoff = 0.7,
   allow_dups = FALSE,
   return_df = FALSE
 )
@@ -45,6 +47,20 @@ that clusterProfiler errors when trying to run \code{enrichGO()} with all
 ontologies at once.)}
 
 \item{p_enrich}{Adjusted p-value threshold for enrichment.}
+
+\item{simplify_terms}{Whether to use clusterProfiler's \code{simplify()}
+function to flag redundant/similar GO terms among the significant ones.
+With an \code{OrgDb}, this works directly (GSEA is always run across all 3
+GO ontologies). With a \code{term_map}, this requires an \code{ontology} column
+in \code{term_map}. Adds a \code{redundant} column: \code{NA} for terms that weren't
+significant (\code{padj < p_enrich}), \code{FALSE} for significant terms kept by
+\code{simplify()} (or when \code{simplify_terms = FALSE}), and \code{TRUE} for
+significant terms removed by \code{simplify()} as too similar to another,
+more significant term. When \code{return_df = FALSE}, terms flagged as
+redundant are dropped from the returned object (in addition to
+non-significant terms).}
+
+\item{simplify_cutoff}{Simplify similarity cutoff.}
 
 \item{allow_dups}{Allow a gene ID to be present multiple times in a
 (single-contrast) list of DEGs. This should typically \emph{not} be the

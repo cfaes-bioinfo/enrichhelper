@@ -98,12 +98,12 @@ analysis.}
 
 \item{simplify_terms}{Whether to use clusterProfiler's \code{simplify()}
 function to flag redundant/similar GO terms among the significant ones.
-All tested terms are always returned (regardless of \code{simplify_terms});
-when \code{simplify_terms = TRUE}, a \code{redundant} column flags terms that were
-significant (p.adjust < p_enrich) but removed by \code{simplify()} as too
-similar to another, more significant term. Terms that were never
-significant have \code{redundant = FALSE} (\code{simplify()} never considered
-them) -- use \code{sig}/\code{padj} to identify those.}
+All tested terms are always returned (regardless of \code{simplify_terms})
+in a single \code{redundant} column: \code{NA} for terms that weren't significant
+(\code{padj < p_enrich}, \code{qvalue < q_enrich}, \code{Count >= min_DE_in_cat}),
+\code{FALSE} for significant terms kept by \code{simplify()} (or when
+\code{simplify_terms = FALSE}), and \code{TRUE} for significant terms removed by
+\code{simplify()} as too similar to another, more significant term.}
 
 \item{simplify_cutoff}{Simplify similarity cutoff.}
 

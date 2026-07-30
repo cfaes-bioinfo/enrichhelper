@@ -25,6 +25,18 @@
 #'   that clusterProfiler errors when trying to run `enrichGO()` with all
 #'   ontologies at once.)
 #' @param p_enrich Adjusted p-value threshold for enrichment.
+#' @param simplify_terms Whether to use clusterProfiler's `simplify()`
+#'   function to flag redundant/similar GO terms among the significant ones.
+#'   With an `OrgDb`, this works directly (GSEA is always run across all 3
+#'   GO ontologies). With a `term_map`, this requires an `ontology` column
+#'   in `term_map`. Adds a `redundant` column: `NA` for terms that weren't
+#'   significant (`padj < p_enrich`), `FALSE` for significant terms kept by
+#'   `simplify()` (or when `simplify_terms = FALSE`), and `TRUE` for
+#'   significant terms removed by `simplify()` as too similar to another,
+#'   more significant term. When `return_df = FALSE`, terms flagged as
+#'   redundant are dropped from the returned object (in addition to
+#'   non-significant terms).
+#' @param simplify_cutoff Simplify similarity cutoff.
 #' @param allow_dups Allow a gene ID to be present multiple times in a
 #'   (single-contrast) list of DEGs. This should typically *not* be the
 #'   case, but could be so when working with gene IDs (orthologs) from
@@ -45,6 +57,8 @@ run_gsea <- function(
   ontology_type = NULL,
   GO_ontology = NULL,
   p_enrich = 0.05,
+  simplify_terms = FALSE,
+  simplify_cutoff = 0.7,
   allow_dups = FALSE,
   return_df = FALSE
 ) {
@@ -154,13 +168,39 @@ run_gsea <- function(
     )
   }
 
+  # Flag redundant terms (simplify_terms == TRUE), then fold significance and redundancy
+  # into a single 'redundant' column: NA = not significant, FALSE = significant & kept
+  # (or simplify_terms == FALSE), TRUE = significant but removed by simplify()
+  if (simplify_terms) {
+    if (!is.null(term_map)) {
+      if ("ontology" %in% colnames(term_map)) {
+        gsea_res <- flag_redundant_termmap(gsea_res, term_map, p_enrich, simplify_cutoff)
+      } else {
+        warning(
+          "simplify_terms = TRUE requires an 'ontology' column in term_map -- ",
+          "skipping simplify (no terms flagged as redundant)"
+        )
+        gsea_res@result$redundant <- FALSE
+      }
+    } else {
+      # gseGO(ont = "ALL") sets setType = "GOALL", which simplify() requires
+      gsea_res <- flag_redundant_go(gsea_res, p_enrich, simplify_cutoff)
+    }
+  } else {
+    gsea_res@result$redundant <- FALSE
+  }
+  gsea_res@result$redundant <- dplyr::if_else(
+    gsea_res@result$p.adjust < p_enrich,
+    gsea_res@result$redundant,
+    NA
+  )
+
   # Report
-  n_sig <- sum(gsea_res$p.adjust < p_enrich)
-  cat(" // Nr enriched:", n_sig, "\n")
+  report_sig_counts(gsea_res@result$redundant, simplify_terms)
 
   # Return a df, if requested
   if (return_df == FALSE) {
-    gsea_res <- gsea_res |> dplyr::filter(p.adjust < p_enrich)
+    gsea_res <- gsea_res |> dplyr::filter(p.adjust < p_enrich, !redundant)
   } else {
     # Convert to a df
     gsea_res <- tibble::as_tibble(gsea_res)
@@ -177,6 +217,7 @@ run_gsea <- function(
         term = ID,
         padj = p.adjust,
         sig,
+        redundant,
         description = Description,
         dplyr::any_of("ontology"),
         gene_ids = core_enrichment

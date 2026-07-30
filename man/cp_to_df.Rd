@@ -29,12 +29,13 @@ column, adds an \code{ontology} column (term_map path).}
 
 \item{DE_direction}{Value written into the \code{DE_direction} column.}
 
-\item{p_enrich}{Adjusted p-value threshold for the \code{sig} flag.}
+\item{p_enrich}{Adjusted p-value threshold for significance (\code{redundant}
+column).}
 
-\item{q_enrich}{Q-value threshold for the \code{sig} flag.}
+\item{q_enrich}{Q-value threshold for significance (\code{redundant} column).}
 
-\item{min_DE_in_cat}{Min. number of DE genes in a category for the \code{sig}
-flag.}
+\item{min_DE_in_cat}{Min. number of DE genes in a category for
+significance (\code{redundant} column).}
 }
 \value{
 A tibble with one row per tested term.
