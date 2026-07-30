@@ -10,7 +10,7 @@ cdotplot(
   DE_dirs = NULL,
   x_var = "padj_log",
   fill_var = "median_lfc",
-  label_var = "n_focal_in_cat",
+  label_var = NULL,
   facet_var1 = NULL,
   facet_var2 = NULL,
   facet_to_columns = TRUE,
@@ -40,7 +40,7 @@ be computed from \code{padj}).}
 be computed from \code{padj}).}
 
 \item{label_var}{Column in \code{df} with a number to add as a label in the
-circles.}
+circles (optional; when not provided, no labels are shown).}
 
 \item{facet_var1}{Column in \code{df} to facet by.}
 

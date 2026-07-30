@@ -16,7 +16,7 @@
 #' @param fill_var Column in `df` to vary fill color by (`"padj_log"` will
 #'   be computed from `padj`).
 #' @param label_var Column in `df` with a number to add as a label in the
-#'   circles.
+#'   circles (optional; when not provided, no labels are shown).
 #' @param facet_var1 Column in `df` to facet by.
 #' @param facet_var2 Second column in `df` to facet by (e.g. `"ontology"`
 #'   for GO).
@@ -50,7 +50,7 @@ cdotplot <- function(
   DE_dirs = NULL,
   x_var = "padj_log",
   fill_var = "median_lfc",
-  label_var = "n_focal_in_cat",
+  label_var = NULL,
   facet_var1 = NULL,
   facet_var2 = NULL,
   facet_to_columns = TRUE,
