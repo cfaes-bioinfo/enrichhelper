@@ -82,6 +82,9 @@ cdotplot <- function(
       "df is missing the 'DE_direction' column, needed because 'DE_dirs' was specified"
     )
   }
+  if (!is.null(facet_var2) && is.null(facet_var1)) {
+    stop("facet_var1 must be specified when facet_var2 is used")
+  }
   requested_cols <- c(x_var, fill_var, label_var, facet_var1, facet_var2)
   requested_cols <- setdiff(requested_cols, c("padj_log", required_cols))
   missing_requested <- setdiff(requested_cols, colnames(df))
