@@ -11,6 +11,7 @@ run_gsea(
   OrgDb = NULL,
   keyType = "ENTREZID",
   ontology_type = NULL,
+  organism = NULL,
   GO_ontology = NULL,
   p_enrich = 0.05,
   simplify_terms = FALSE,
@@ -28,17 +29,29 @@ run_gsea(
 \code{contrast} column in \code{df}.}
 
 \item{term_map}{Gene-to-term map (e.g., GO or KEGG). Either \code{term_map}
-(use a 'manual' lookup table) or \code{OrgDb} (use a Bioconductor lookup
-table) is required.}
+(use a 'manual' lookup table), an \code{OrgDb} (for GO), or an \code{organism}
+(for KEGG) is required.}
 
-\item{OrgDb}{Bioconductor \code{OrgDb} (alternative to \code{term_map} for available
-organisms).}
+\item{OrgDb}{Bioconductor \code{OrgDb} (alternative to \code{term_map}, for GO GSEA
+in available organisms). Required when \code{ontology_type = "GO"}; not used
+for \code{ontology_type = "KEGG"} (see \code{organism}).}
 
-\item{keyType}{OrgDb gene ID type. Only applies when using an \code{OrgDb}
-instead of a \code{term_map}.}
+\item{keyType}{OrgDb gene ID type (\code{ontology_type = "GO"}) or
+\code{gseKEGG()} \code{keyType} (\code{ontology_type = "KEGG"}) -- only applies when
+using an \code{OrgDb}/\code{organism} instead of a \code{term_map}. For KEGG, the
+default \code{"ENTREZID"} is translated to \code{gseKEGG()}'s own
+\code{"ncbi-geneid"}; any other value is passed through as-is, but must be
+one KEGG's own API supports: \code{"kegg"}, \code{"ncbi-geneid"},
+\code{"ncbi-proteinid"}, or \code{"uniprot"} (notably \emph{not} \code{"ENSEMBL"} -- convert
+Ensembl IDs to one of these first, e.g. via \code{AnnotationDbi::mapIds()}).}
 
-\item{ontology_type}{\code{"GO"} (\code{enrichGO()}) or \code{"KEGG"} (\code{enrichKEGG()}).
-Only applies when using an \code{OrgDb} instead of a \code{term_map}.}
+\item{ontology_type}{\code{"GO"} (\code{gseGO()}, requires \code{OrgDb}) or \code{"KEGG"}
+(\code{gseKEGG()}, requires \code{organism}). Only applies when using an
+\code{OrgDb}/\code{organism} instead of a \code{term_map}.}
+
+\item{organism}{KEGG species code (e.g. \code{"hsa"} for human, \code{"mmu"} for
+mouse; see \url{https://rest.kegg.jp/list/organism} for the full list).
+Alternative to \code{term_map}, used instead of \code{OrgDb} when \code{ontology_type = "KEGG"}.}
 
 \item{GO_ontology}{Only for GO analysis with an \code{OrgDb} \emph{and} when
 \code{return_df == TRUE} (default is \code{"BP"} there). In all other cases, GO
@@ -53,13 +66,13 @@ ontologies at once.)}
 function to flag redundant/similar GO terms among the significant ones.
 With an \code{OrgDb}, this works directly (GSEA is always run across all 3
 GO ontologies). With a \code{term_map}, this requires an \code{ontology} column
-in \code{term_map}. Adds a \code{redundant} column: \code{NA} for terms that weren't
-significant (\code{padj < p_enrich}), \code{FALSE} for significant terms kept by
-\code{simplify()} (or when \code{simplify_terms = FALSE}), and \code{TRUE} for
-significant terms removed by \code{simplify()} as too similar to another,
-more significant term. When \code{return_df = FALSE}, terms flagged as
-redundant are dropped from the returned object (in addition to
-non-significant terms).}
+in \code{term_map}. Not supported for \code{ontology_type = "KEGG"} (no GO-like
+term structure) -- a warning is emitted and ignored there. Adds a
+\code{redundant} column: \code{NA} for terms that weren't significant (\code{padj < p_enrich}), \code{FALSE} for significant terms kept by \code{simplify()} (or when
+\code{simplify_terms = FALSE}), and \code{TRUE} for significant terms removed by
+\code{simplify()} as too similar to another, more significant term. When
+\code{return_df = FALSE}, terms flagged as redundant are dropped from the
+returned object (in addition to non-significant terms).}
 
 \item{simplify_cutoff}{Simplify similarity cutoff.}
 
@@ -79,8 +92,8 @@ A GSEA result object (\code{return_df = FALSE}) or a tibble
 (\code{return_df = TRUE}).
 }
 \description{
-A wrapper around \code{clusterProfiler::GSEA()}/\code{clusterProfiler::gseGO()} that
-ranks genes by log2 fold change for a given contrast and runs the GSEA
-algorithm against either a manually supplied term map or a Bioconductor
-\code{OrgDb}.
+A wrapper around \code{clusterProfiler::GSEA()}/\code{clusterProfiler::gseGO()}/
+\code{clusterProfiler::gseKEGG()} that ranks genes by log2 fold change for a
+given contrast and runs the GSEA algorithm against either a manually
+supplied term map or a Bioconductor \code{OrgDb}/KEGG \code{organism}.
 }

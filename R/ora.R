@@ -505,17 +505,36 @@ run_enricher <- function(
   return(res)
 }
 
+# Translate/validate a keyType for KEGG functions (shared by run_ora()'s run_enrichkegg()
+# and run_gsea()'s KEGG path). KEGG's REST API (queried via KEGG_convert() inside
+# enrichKEGG()/gseKEGG()) only recognizes a small, fixed set of gene ID types -- notably
+# NOT 'ENSEMBL' -- so an unsupported keyType is caught here with a clear message rather
+# than surfacing as a cryptic KEGG HTTP-400/"not supported" error from deep inside
+# clusterProfiler. keyType follows enrichGO()'s/gseGO()'s OrgDb-style default
+# ('ENTREZID'), translated to KEGG's own vocabulary ('ncbi-geneid') since OrgDb and KEGG
+# functions use different keyType names; any other keyType (e.g. 'kegg', 'uniprot') is
+# passed through as-is (after validation).
+resolve_kegg_keytype <- function(keyType) {
+  kegg_keyTypes <- c("kegg", "ncbi-geneid", "ncbi-proteinid", "uniprot")
+  kegg_keyType <- if (identical(keyType, "ENTREZID")) "ncbi-geneid" else keyType
+  if (!kegg_keyType %in% kegg_keyTypes) {
+    stop(
+      "keyType = '",
+      keyType,
+      "' is not supported by KEGG -- KEGG's API only recognizes: ",
+      paste(kegg_keyTypes, collapse = ", "),
+      " (or 'ENTREZID', auto-translated to 'ncbi-geneid'). Convert your gene IDs to one ",
+      "of these first, e.g. via AnnotationDbi::mapIds(OrgDb, keys, keytype = 'ENSEMBL', ",
+      "column = 'ENTREZID')."
+    )
+  }
+  kegg_keyType
+}
+
 # Run KEGG enrichment for a model organism via clusterProfiler::enrichKEGG() (run_ora()
 # engine), as an alternative to the term_map path. KEGG terms have no GO-like DAG structure,
 # so clusterProfiler::simplify() doesn't apply -- simplify_terms is only warned about here,
-# never honored; 'redundant' is left FALSE for every term. keyType follows enrichGO()'s
-# OrgDb-style default ('ENTREZID'), translated to enrichKEGG()'s own vocabulary
-# ('ncbi-geneid') since the two functions use different keyType names; any other keyType
-# (e.g. 'kegg', 'uniprot') is passed through as-is. KEGG's own REST API (which
-# enrichKEGG()/KEGG_convert() query for the ID conversion) only recognizes a small, fixed
-# set of gene ID types -- notably NOT 'ENSEMBL' -- so an unsupported keyType is caught here
-# with a clear message rather than surfacing as a cryptic KEGG HTTP-400/"not supported" error
-# from deep inside enrichKEGG().
+# never honored; 'redundant' is left FALSE for every term.
 run_enrichkegg <- function(
   focal_genes,
   organism,
@@ -531,19 +550,11 @@ run_enrichkegg <- function(
       "ignoring simplify_terms"
     )
   }
-  kegg_keyTypes <- c("kegg", "ncbi-geneid", "ncbi-proteinid", "uniprot")
-  kegg_keyType <- if (identical(keyType, "ENTREZID")) "ncbi-geneid" else keyType
-  if (!kegg_keyType %in% kegg_keyTypes) {
-    stop(
-      "keyType = '",
-      keyType,
-      "' is not supported by enrichKEGG() -- KEGG's API only recognizes: ",
-      paste(kegg_keyTypes, collapse = ", "),
-      " (or 'ENTREZID', auto-translated to 'ncbi-geneid'). Convert your gene IDs to one ",
-      "of these first, e.g. via AnnotationDbi::mapIds(OrgDb, keys, keytype = 'ENSEMBL', ",
-      "column = 'ENTREZID')."
-    )
-  }
+  # Resolved/validated eagerly (as its own statement, not inline as an enrichKEGG() argument):
+  # enrichKEGG() only forces its 'keyType' argument deep inside download_KEGG(), after it has
+  # already made 1-2 KEGG API calls -- passed inline, an invalid keyType would only surface
+  # after those network round-trips instead of failing immediately.
+  kegg_keyType <- resolve_kegg_keytype(keyType)
   clusterProfiler::enrichKEGG(
     gene = focal_genes,
     organism = organism,

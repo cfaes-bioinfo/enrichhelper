@@ -36,6 +36,6 @@
       run_ora(focal_genes = c("g1", "g2"), ontology_type = "KEGG", organism = "hsa",
       keyType = "ENSEMBL", verbose = FALSE)
     Condition
-      Error in `run_enrichkegg()`:
-      ! keyType = 'ENSEMBL' is not supported by enrichKEGG() -- KEGG's API only recognizes: kegg, ncbi-geneid, ncbi-proteinid, uniprot (or 'ENTREZID', auto-translated to 'ncbi-geneid'). Convert your gene IDs to one of these first, e.g. via AnnotationDbi::mapIds(OrgDb, keys, keytype = 'ENSEMBL', column = 'ENTREZID').
+      Error in `resolve_kegg_keytype()`:
+      ! keyType = 'ENSEMBL' is not supported by KEGG -- KEGG's API only recognizes: kegg, ncbi-geneid, ncbi-proteinid, uniprot (or 'ENTREZID', auto-translated to 'ncbi-geneid'). Convert your gene IDs to one of these first, e.g. via AnnotationDbi::mapIds(OrgDb, keys, keytype = 'ENSEMBL', column = 'ENTREZID').
 

@@ -1,3 +1,14 @@
+# enrichhelper 0.0.0.9004
+
+* `run_gsea()` gained support for KEGG GSEA of model organisms (`ontology_type
+  = "KEGG"`) via `clusterProfiler::gseKEGG()`, using a new `organism` argument
+  (KEGG species code, e.g. `"hsa"`) instead of a `term_map`, mirroring the
+  `run_ora()` KEGG support added in 0.0.0.9003. `simplify_terms` is not
+  supported for KEGG, and an unsupported `keyType` (e.g. `"ENSEMBL"`) now
+  errors immediately with a clear message. `run_gsea()` also gained the same
+  upfront `term_map`/`OrgDb`/`organism`/`ontology_type` validation as
+  `run_ora()`, rather than failing later with a less clear error.
+
 # enrichhelper 0.0.0.9003
 
 * `run_ora()` gained support for KEGG enrichment of model organisms

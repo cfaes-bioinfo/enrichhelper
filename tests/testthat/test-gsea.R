@@ -105,3 +105,56 @@ test_that("run_gsea() warns and skips simplify when term_map has no 'ontology' c
   expect_true("redundant" %in% colnames(res))
   expect_false(any(res$redundant, na.rm = TRUE))
 })
+
+test_that("run_gsea() requires exactly one of 'term_map'/'OrgDb'/'organism'", {
+  fixture <- make_gsea_fixture()
+  expect_snapshot(
+    error = TRUE,
+    run_gsea(df = fixture$de_df, contrast = "c1")
+  )
+  expect_snapshot(
+    error = TRUE,
+    run_gsea(
+      df = fixture$de_df,
+      contrast = "c1",
+      term_map = fixture$term_map,
+      OrgDb = "org.Hs.eg.db"
+    )
+  )
+})
+
+test_that("run_gsea() requires 'organism' for KEGG and 'OrgDb' for GO", {
+  fixture <- make_gsea_fixture()
+  expect_snapshot(
+    error = TRUE,
+    run_gsea(
+      df = fixture$de_df,
+      contrast = "c1",
+      ontology_type = "KEGG",
+      OrgDb = "org.Hs.eg.db"
+    )
+  )
+  expect_snapshot(
+    error = TRUE,
+    run_gsea(
+      df = fixture$de_df,
+      contrast = "c1",
+      ontology_type = "GO",
+      organism = "hsa"
+    )
+  )
+})
+
+test_that("run_gsea() rejects a KEGG keyType unsupported by KEGG's own API", {
+  fixture <- make_gsea_fixture()
+  expect_snapshot(
+    error = TRUE,
+    run_gsea(
+      df = fixture$de_df,
+      contrast = "c1",
+      ontology_type = "KEGG",
+      organism = "hsa",
+      keyType = "ENSEMBL"
+    )
+  )
+})
