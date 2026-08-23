@@ -385,8 +385,17 @@ prep_ora_genes <- function(
   skip <- FALSE
   if (!is.null(term_map)) {
     genes_in_map <- focal_genes[focal_genes %in% term_map$gene]
-    # NULL univ_vec means 'use clusterProfiler's default universe', not 'zero background genes'
-    univ_label <- if (is.null(univ_vec)) "default" else length(univ_vec)
+    # NULL univ_vec means 'use clusterProfiler's default universe', not 'zero background genes':
+    # enricher() falls back to every unique gene in TERM2GENE. Report that size alongside the
+    # 'default' label so the message is never just a bare word. It is an upper bound rather than
+    # the exact denominator -- run_enricher() may still drop terms (filter_no_descrip) and
+    # enricher() applies min/max_cat_size -- so genes only reachable via dropped terms are not
+    # in the final background. The exact figure is in the 'n_total' column of the returned df.
+    univ_label <- if (is.null(univ_vec)) {
+      paste0("default (<=", dplyr::n_distinct(term_map$gene), " in term_map)")
+    } else {
+      length(univ_vec)
+    }
     if (verbose) {
       cat(
         "Contrast: ",
