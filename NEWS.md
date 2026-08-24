@@ -1,3 +1,13 @@
+# enrichhelper 0.0.0.9005
+
+* Added `run_goseq()`, a gene-length-aware (or, more generally,
+  selection-bias-aware) alternative to `run_ora()` that reimplements the
+  method of the Bioconductor `goseq` package directly (it needs
+  `GenomicFeatures` -> `rtracklayer` -> `XML`, which fails to install/load in
+  some environments) using `mgcv` (the probability weighting function) and
+  `BiasedUrn` (the Wallenius noncentral hypergeometric p-value) instead. New
+  Imports: `BiasedUrn`, `mgcv`.
+
 # enrichhelper 0.0.0.9004
 
 * `run_gsea()` gained support for KEGG GSEA of model organisms (`ontology_type
