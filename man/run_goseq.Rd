@@ -88,8 +88,9 @@ the current graphics device.}
 \item{allow_dups}{Allow a gene ID to be present multiple times in
 \code{focal_genes}/the derived focal gene list.}
 
-\item{verbose}{Print progress messages (contrast/DE direction/gene
-counts, \code{simplify()} summary, enriched-term count).}
+\item{verbose}{Print a one-line progress message (contrast/DE direction/
+gene counts, and the enriched-term count -- with the non-redundant count
+alongside it when \code{simplify_terms = TRUE}).}
 }
 \value{
 A tibble with one row per tested term, or \code{NULL} when there were

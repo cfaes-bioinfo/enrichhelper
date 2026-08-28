@@ -81,8 +81,9 @@
 #'   the current graphics device.
 #' @param allow_dups Allow a gene ID to be present multiple times in
 #'   `focal_genes`/the derived focal gene list.
-#' @param verbose Print progress messages (contrast/DE direction/gene
-#'   counts, `simplify()` summary, enriched-term count).
+#' @param verbose Print a one-line progress message (contrast/DE direction/
+#'   gene counts, and the enriched-term count -- with the non-redundant count
+#'   alongside it when `simplify_terms = TRUE`).
 #'
 #' @return A tibble with one row per tested term, or `NULL` when there were
 #'   too few focal genes (`< min_DE_in_cat`) or no categories passed
@@ -260,7 +261,7 @@ run_goseq <- function(
   is_sig <- res$padj < p_enrich & res$n_focal_in_cat >= min_DE_in_cat
   res$redundant <- dplyr::if_else(is_sig, FALSE, NA)
   if (simplify_terms && any(is_sig, na.rm = TRUE)) {
-    res$redundant <- flag_redundant_goseq(res, is_sig, simplify_cutoff, verbose)
+    res$redundant <- flag_redundant_goseq(res, is_sig, simplify_cutoff)
   }
 
   # -- Mean/median LFC of the focal genes in each category --------------------
@@ -287,7 +288,6 @@ run_goseq <- function(
     cat("Contrast: ", fcontrast, " // DE direction: ", DE_direction,
         " // DEGs (w/ term): ", length(focal_genes), " (", n_focal, ")",
         " // background genes w/ term: ", N,
-        " // method: ", method,
         " // enriched terms: ", sum(is_sig, na.rm = TRUE),
         if (simplify_terms) {
           paste0(" (", sum(is_sig & !res$redundant, na.rm = TRUE), " non-redundant)")
@@ -314,7 +314,10 @@ run_goseq <- function(
 # term/description/padj/ontology, and a caller-supplied 'is_sig' that already
 # folds in min_DE_in_cat) rather than an enrichResult S4 object thresholded on
 # p_enrich alone -- kept separate rather than shared for that reason.
-flag_redundant_goseq <- function(res, is_sig, simplify_cutoff, verbose = TRUE) {
+# Prints nothing: run_goseq()'s own progress line already reports both the
+# significant and the non-redundant term count ("enriched terms: 6 (5
+# non-redundant)"), unlike run_ora(), which builds its line in pieces.
+flag_redundant_goseq <- function(res, is_sig, simplify_cutoff) {
   redundant <- dplyr::if_else(is_sig, FALSE, NA)
   simplify_fn <- tryCatch(
     utils::getFromNamespace("simplify_internal", "clusterProfiler"),
@@ -334,9 +337,6 @@ flag_redundant_goseq <- function(res, is_sig, simplify_cutoff, verbose = TRUE) {
     simplify_fn(rows, cutoff = simplify_cutoff, measure = "Wang",
                 ontology = ont, semData = sem)$ID
   }))
-  if (verbose) {
-    cat(" // simplified:", nrow(sig_rows), "->", length(keep), "terms")
-  }
   redundant[is_sig] <- !res$term[is_sig] %in% keep
   redundant
 }
